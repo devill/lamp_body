@@ -86,9 +86,9 @@ part(3,36,0,10,1);
 translate([0,width*2,0])
 part(4,36,0, 10,1);
 
-translate([width*2,0,0])
+translate([0,width*4,0])
 part(3,36,0,8,2);
-translate([width*2,width*2,0])
+translate([0,width*6,0])
 part(4,36,0,8,2);
 //placed_part(3,18,10);
 //placed_part(2,18,10);
@@ -152,9 +152,9 @@ module part(id, count, stick_to, thickness, linking_method) {
     
     stick_point = middle + stick_to * 180/count;
     
-    rotate([0,-90,0])
-    multmatrix(inverse_matrix(begin))
-    translate(-f(begin))
+    rotate([0,0,0])
+    multmatrix(inverse_matrix(stick_point))
+    translate(-f(stick_point))
     placed_part(id,count, thickness, linking_method);
 }
 
