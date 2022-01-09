@@ -79,24 +79,48 @@ function inverse_matrix(t) = [
 
 
 //body(0,180,10);
-//body(0,360,10);
-//covers(0,360,10);
+//body(0,360,8);
+//hanger_cover();
+//covers(0,360,8);
 
-part(3,36,0,10,1);
-translate([0,width*2,0])
-part(4,36,0, 10,1);
+//part(3,36,0,10,1);
+//translate([0,width*2,0])
+//part(4,36,0, 10,1);
 
-translate([0,width*4,0])
-part(3,36,0,8,2);
-translate([0,width*6,0])
-part(4,36,0,8,2);
-//placed_part(3,18,10);
-//placed_part(2,18,10);
+translate([0,-width,0])
+part(6,60,0,8,2);
+translate([0,width,0])
+part(7,60,0,8,2);
+//placed_part(6,60,8,2);
+//placed_part(7,60,8,2);
 
 //for(i = [0:1:18]) {
 //    translate([0,i*width*2,0])
 //    part(i,18,0,10);
 //}
+
+module hanger_cover() {
+        multmatrix(matrix(270)) {
+        
+        difference() {
+            sphere(d=2.5*width);
+            sphere(d=2.5*width-2);
+            mirror([1,0,0])
+            rotate([0,0,-25])
+            translate([7,-2*width,-2*width])
+            cube(4*width);
+            rotate([0,0,-25])
+            translate([7,-2*width,-2*width])
+            cube(4*width);
+            
+        }
+        difference() {
+            cylinder(h=2.5*width, d=4, center=true);
+            cube(width+2,center=true);
+        }
+        
+    }
+}
 
 module placed_part(id, count, thickness, linking_method) {
     begin = 360/count * id;
@@ -109,23 +133,29 @@ module placed_part(id, count, thickness, linking_method) {
         body(begin,end, thickness);
         multmatrix(matrix(begin+1))
         rotate([90,0,0]) {
-            screw_cutter(hole_location, thickness, linking_method);
-            screw_cutter(-hole_location, thickness, linking_method);
+            //screw_cutter(hole_location, thickness, linking_method);
+            //screw_cutter(-hole_location, thickness, linking_method);
+            screw_cutter(0, thickness, linking_method);
             
-            translate([-2,0,0])
-            cube([15,width,3],center=true);
+            translate([-2,0,-thickness/2])
+            cube([15,width,thickness],center=true);
         }
-        
     }
     
-    multmatrix(matrix(end+1))
-    rotate([90,0,0])
-    difference() {
-        translate([-2,0,0])
-        cube([15,width,3],center=true);
-        
-        screw_cutter(hole_location, thickness, linking_method);
-        screw_cutter(-hole_location, thickness, linking_method);
+    intersection() {
+        multmatrix(matrix(end+1))
+        rotate([90,0,0])
+        difference() {
+            translate([-2,0,-thickness/2])
+            cube([14.4,width-0.6,thickness-0.6],center=true);
+            
+            //screw_cutter(hole_location, thickness, linking_method);
+            //screw_cutter(-hole_location, thickness, linking_method);
+            screw_cutter(0, thickness, linking_method);
+            
+            
+        }
+        body(end, end+2, thickness);
     }
 }
 
@@ -177,6 +207,13 @@ module body(begin, end, thickness) {
             extrude(begin-step,end+step)     
             translate([0,-(thickness+brim*2+2)/2,0])
             cube(size = [segment_width,brim*2+2,width], center=true);
+            
+            multmatrix(matrix(270)) 
+            difference() {
+                cube([14,10,10], center=true);
+                cylinder(h=12,r=3.5, center= true);
+            }
+            hanger_cover();
         }
     }
     
