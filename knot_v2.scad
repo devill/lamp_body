@@ -1,11 +1,10 @@
 $fs = 0.1;
 
-step = 2;
+step = 4;
 width = 15;
-//thickness = 10;
+thickness = 10;
 brim = 2;
 segment_width = 0.1;
-cutter_width = 0.15;
 strip_length = 2500;
 
 px = 3;
@@ -18,7 +17,7 @@ cz = 2;
 function curve(t) = [
     (cx*cos(px*t)+cos(t)),
     (cy*sin(py*t)),
-    (cz*sin(pz*t)+sin(t))
+    1.5*(cz*sin(pz*t)+sin(t))
 ];
 
 function curve_length(i) = 
@@ -35,13 +34,13 @@ echo("Mid point length: ", f_length(360));
 function speed(t)  = [
     -cx*px*sin(px*t)-sin(t),
     cy*py*cos(py*t),
-    cz*pz*cos(pz*t)+cos(t)
+    1.5*(cz*pz*cos(pz*t)+cos(t))
 ];
 
 function acceleration(t) = [
     -cx*px*px*cos(px*t) - cos(t),
     -cy*py*py*sin(py*t),
-    -cz*pz*pz*sin(pz*t) - sin(t)
+    1.5*(-cz*pz*pz*sin(pz*t) - sin(t))
 ];
 
 
@@ -78,7 +77,9 @@ function inverse_matrix(t) = [
 
 
 //body(0,180,10);
-//body(0,360,8);
+
+body(0,360);
+
 //body(45,135,8);
 //hanger_cover();
 //covers(0,360,8);
@@ -90,7 +91,7 @@ function inverse_matrix(t) = [
 //translate([0,-width,0])
 //part(6,60,0,8,2);
 //translate([0,width,0])
-part(1,60,0,8);
+//part(1,60,0);
 //placed_part(6,60,8);
 //placed_part(7,60,8);
 
@@ -122,36 +123,15 @@ module hanger_cover() {
     }
 }
 
-module placed_part(id, count, thickness) {
+module placed_part(id, count) {
     begin = 360/count * id;
     middle = begin + 180/count;
     end = begin + 360/count;
-
-    hole_location = width/2-2-1;
     
-    difference() {
-        body(begin,end, thickness);
-        multmatrix(matrix(begin+1))
-        rotate([twist(begin+1),0,0])
-        rotate([90,0,0]) {            
-            translate([-2,0,-thickness/2])
-            cube([15,width,thickness],center=true);
-        }
-    }
-    
-    intersection() {
-        multmatrix(matrix(end+1))
-        rotate([twist(end+1),0,0])
-        rotate([90,0,0])
-        difference() {
-            translate([-2,0,-thickness/2])
-            cube([14.4,width-0.6,thickness-0.6],center=true);            
-        }
-        body(end, end+2, thickness);
-    }
+    body(begin,end);
 }
 
-module part(id, count, stick_to, thickness) {
+module part(id, count, stick_to) {
     begin = 360/count * id;
     middle = begin + 180/count;
     end = begin + 360/count;
@@ -161,10 +141,10 @@ module part(id, count, stick_to, thickness) {
     rotate([0,0,0])
     multmatrix(inverse_matrix(stick_point))
     translate(-f(stick_point))
-    placed_part(id,count, thickness);
-//}
+    placed_part(id,count);
+}
 
-module body(begin, end, thickness) {
+module body(begin, end) {
     color("DimGray"){
         difference() {
             extrude(begin,end)     
@@ -189,17 +169,17 @@ module body(begin, end, thickness) {
     
 }
 
-module cover(m, begin, end, thickness) {
+module cover(m, begin, end) {
     extrude(begin,end) 
     mirror([0,m,0])
     translate([0,-thickness/2,0])
     arc(width/2,segment_width,8);
 }
 
-module covers(begin,end, thickness) {
+module covers(begin,end) {
     color("white") {
-        cover(0, begin, end, thickness);
-        cover(1, begin, end, thickness);
+        cover(0, begin, end);
+        cover(1, begin, end);
     }
 }
 
