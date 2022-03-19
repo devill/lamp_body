@@ -1,6 +1,6 @@
 $fs = 0.1;
 
-step = 4;
+step = 2;
 width = 15;
 thickness = 10;
 brim = 2;
@@ -17,7 +17,7 @@ cz = 2;
 function curve(t) = [
     (cx*cos(px*t)+cos(t)),
     (cy*sin(py*t)),
-    1.5*(cz*sin(pz*t)+sin(t))
+    (cz*sin(pz*t)+sin(t))
 ];
 
 function curve_length(i) = 
@@ -34,13 +34,13 @@ echo("Mid point length: ", f_length(360));
 function speed(t)  = [
     -cx*px*sin(px*t)-sin(t),
     cy*py*cos(py*t),
-    1.5*(cz*pz*cos(pz*t)+cos(t))
+    cz*pz*cos(pz*t)+cos(t)
 ];
 
 function acceleration(t) = [
     -cx*px*px*cos(px*t) - cos(t),
     -cy*py*py*sin(py*t),
-    1.5*(-cz*pz*pz*sin(pz*t) - sin(t))
+    -cz*pz*pz*sin(pz*t) - sin(t)
 ];
 
 
@@ -78,7 +78,7 @@ function inverse_matrix(t) = [
 
 //body(0,180,10);
 
-body(0,360);
+//body(0,360);
 
 //body(45,135,8);
 //hanger_cover();
@@ -95,10 +95,10 @@ body(0,360);
 //placed_part(6,60,8);
 //placed_part(7,60,8);
 
-//for(i = [0:1:6]) {
-//    translate([0,i*width*5,0])
-//    part(i,6,0,10);
-//}
+for(i = [0:1:3]) {
+    translate([0,i*width*3,0])
+//    part(i,4,0);
+}
 
 module hanger_cover() {
         multmatrix(matrix(270)) {
@@ -138,7 +138,7 @@ module part(id, count, stick_to) {
     
     stick_point = middle + stick_to * 180/count;
     
-    rotate([0,0,0])
+    rotate([90,0,0])
     multmatrix(inverse_matrix(stick_point))
     translate(-f(stick_point))
     placed_part(id,count);
@@ -195,7 +195,9 @@ module arc(r,h,fn) {
     }
 }
 
-function twist(a) = -min(1,max(0,(a-75)/30))*180;
+function twist(a) = 0;
+//function twist(a) = (1-cos(90*-min(1,max(0,(a-60)/60))))*180;
+//function twist(a) = -min(1,max(0,(a-75)/30))*180;
 
 module extrude(begin,end) {
     union() {
