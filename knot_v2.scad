@@ -1,6 +1,6 @@
 $fs = 0.1;
 
-step = 1;
+step = 2;
 width = 15;
 //thickness = 10;
 brim = 2;
@@ -77,27 +77,27 @@ function inverse_matrix(t) = [
 ];
 
 
-
 //body(0,180,10);
 //body(0,360,8);
+//body(45,135,8);
 //hanger_cover();
 //covers(0,360,8);
 
-//part(3,36,0,10,1);
+//part(3,36,-1,10,1);
 //translate([0,width*2,0])
-//part(4,36,0, 10,1);
+//part(4,36,-1, 10,1);
 
-translate([0,-width,0])
-part(6,60,0,8,2);
-translate([0,width,0])
-part(7,60,0,8,2);
+//translate([0,-width,0])
+//part(6,60,0,8,2);
+//translate([0,width,0])
+//part(7,60,0,8,2);
 //placed_part(6,60,8,2);
 //placed_part(7,60,8,2);
 
-//for(i = [0:1:18]) {
-//    translate([0,i*width*2,0])
-//    part(i,18,0,10);
-//}
+for(i = [0:1:6]) {
+    translate([0,i*width*5,0])
+    part(i,6,0,10,1);
+}
 
 module hanger_cover() {
         multmatrix(matrix(270)) {
@@ -132,6 +132,7 @@ module placed_part(id, count, thickness, linking_method) {
     difference() {
         body(begin,end, thickness);
         multmatrix(matrix(begin+1))
+        rotate([twist(begin+1),0,0])
         rotate([90,0,0]) {
             //screw_cutter(hole_location, thickness, linking_method);
             //screw_cutter(-hole_location, thickness, linking_method);
@@ -144,6 +145,7 @@ module placed_part(id, count, thickness, linking_method) {
     
     intersection() {
         multmatrix(matrix(end+1))
+        rotate([twist(end+1),0,0])
         rotate([90,0,0])
         difference() {
             translate([-2,0,-thickness/2])
@@ -245,14 +247,18 @@ module arc(r,h,fn) {
     }
 }
 
+function twist(a) = -min(1,max(0,(a-75)/30))*180;
+
 module extrude(begin,end) {
     union() {
         for(a = [begin:step:end-step]) {
             hull() {
                 multmatrix(matrix(a))
+                rotate([twist(a),0,0])
                 children();
                 
                 multmatrix(matrix(a+step))
+                rotate([twist(a+step),0,0])
                 children();
             }
         }
