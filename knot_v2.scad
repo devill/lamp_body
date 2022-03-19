@@ -90,14 +90,14 @@ function inverse_matrix(t) = [
 //translate([0,-width,0])
 //part(6,60,0,8,2);
 //translate([0,width,0])
-//part(7,60,0,8,2);
-//placed_part(6,60,8,2);
-//placed_part(7,60,8,2);
+part(1,60,0,8);
+//placed_part(6,60,8);
+//placed_part(7,60,8);
 
-for(i = [0:1:6]) {
-    translate([0,i*width*5,0])
-    part(i,6,0,10,1);
-}
+//for(i = [0:1:6]) {
+//    translate([0,i*width*5,0])
+//    part(i,6,0,10);
+//}
 
 module hanger_cover() {
         multmatrix(matrix(270)) {
@@ -122,22 +122,18 @@ module hanger_cover() {
     }
 }
 
-module placed_part(id, count, thickness, linking_method) {
+module placed_part(id, count, thickness) {
     begin = 360/count * id;
     middle = begin + 180/count;
     end = begin + 360/count;
 
-    hole_location = width/2-2-linking_method;
+    hole_location = width/2-2-1;
     
     difference() {
         body(begin,end, thickness);
         multmatrix(matrix(begin+1))
         rotate([twist(begin+1),0,0])
-        rotate([90,0,0]) {
-            //screw_cutter(hole_location, thickness, linking_method);
-            //screw_cutter(-hole_location, thickness, linking_method);
-            screw_cutter(0, thickness, linking_method);
-            
+        rotate([90,0,0]) {            
             translate([-2,0,-thickness/2])
             cube([15,width,thickness],center=true);
         }
@@ -149,35 +145,13 @@ module placed_part(id, count, thickness, linking_method) {
         rotate([90,0,0])
         difference() {
             translate([-2,0,-thickness/2])
-            cube([14.4,width-0.6,thickness-0.6],center=true);
-            
-            //screw_cutter(hole_location, thickness, linking_method);
-            //screw_cutter(-hole_location, thickness, linking_method);
-            screw_cutter(0, thickness, linking_method);
-            
-            
+            cube([14.4,width-0.6,thickness-0.6],center=true);            
         }
         body(end, end+2, thickness);
     }
 }
 
-module screw_cutter(hole_location, thickness, linking_method) {
-    if(linking_method == 1) {
-        translate([0,hole_location,-thickness/2-1])
-        screw_space(thickness+2, 1,40);
-        
-        translate([0,hole_location,thickness/2-2])
-        screw_space(3, 2, 40);
-        
-        translate([0,hole_location,-1-thickness/2])
-        screw_space(3, 2, 6);
-    } else {
-        translate([0,hole_location,-thickness/2-1])
-        screw_space(thickness+2, 2,40);
-    }
-}
-
-module part(id, count, stick_to, thickness, linking_method) {
+module part(id, count, stick_to, thickness) {
     begin = 360/count * id;
     middle = begin + 180/count;
     end = begin + 360/count;
@@ -187,14 +161,8 @@ module part(id, count, stick_to, thickness, linking_method) {
     rotate([0,0,0])
     multmatrix(inverse_matrix(stick_point))
     translate(-f(stick_point))
-    placed_part(id,count, thickness, linking_method);
-}
-
-module screw_space(h, r, fidelity) {
-    
-    cylinder(h=h, r=r/cos(180/fidelity),$fn=fidelity);
-}
-
+    placed_part(id,count, thickness);
+//}
 
 module body(begin, end, thickness) {
     color("DimGray"){
