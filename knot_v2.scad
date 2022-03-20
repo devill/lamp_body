@@ -1,11 +1,18 @@
 $fs = 0.1;
 
-step = 2;
+step = 1;
 width = 15;
-thickness = 10;
+tolerance = 0.2;
+thickness = 15;
+strip_width = 10;
+strip_height = 2.5;
 brim = 2;
 segment_width = 0.1;
 strip_length = 2500;
+
+mid_thickness = thickness - 2*(brim+strip_height);
+
+echo("Mid thickness: ", mid_thickness);
 
 px = 3;
 py = 2;
@@ -75,13 +82,15 @@ function inverse_matrix(t) = [
     [0,0,0,1]
 ];
 
+function exp(i, n) = n > 0 ? exp(i, n-1)*i : 1;
+
 
 //body(0,180,10);
 
 //body(0,360);
 
 //body(45,135,8);
-//hanger_cover();
+
 //covers(0,360,8);
 
 //part(3,36,-1,10,1);
@@ -95,32 +104,51 @@ function inverse_matrix(t) = [
 //placed_part(6,60,8);
 //placed_part(7,60,8);
 
-for(i = [0:1:3]) {
+
+for(i = [0:1]) {
     translate([0,i*width*3,0])
-//    part(i,4,0);
+    part(i,60,0);
 }
 
-module hanger_cover() {
-        multmatrix(matrix(270)) {
-        
-        difference() {
-            sphere(d=2.5*width);
-            sphere(d=2.5*width-2);
-            mirror([1,0,0])
-            rotate([0,0,-25])
-            translate([7,-2*width,-2*width])
-            cube(4*width);
-            rotate([0,0,-25])
-            translate([7,-2*width,-2*width])
-            cube(4*width);
-            
+//part(5,6,0);
+module on_pins(id,position,size) {
+    for(i = [0:4]) {
+        if(i == 0 || id % exp(2,i) - id % exp(2,i-1) > 0) {
+            multmatrix(matrix(position))
+            translate([size/2-0.1,0,(i-2)*3.3])
+            rotate([0,90,0])
+            cylinder(h=size, r1=size, r2=0, center=true);
         }
-        difference() {
-            cylinder(h=2.5*width, d=4, center=true);
-            cube(width+2,center=true);
-        }
-        
     }
+}
+module off_pins(id,position,size) {
+    for(i = [0:4]) {
+        if(!(i == 0 || id % exp(2,i) - id % exp(2,i-1) > 0)) {
+            multmatrix(matrix(position))
+            translate([-size/2+0.1,0,(i-2)*3.3])
+            rotate([0,-90,0])
+            cylinder(h=size, r1=size, r2=0, center=true);
+        }
+    }
+}
+
+module bevel_cut() {
+    translate([0,0,-width/2-brim-tolerance])
+    rotate([0,45,0])
+    cube([1.5,thickness+2,1.5], center=true);
+    
+    translate([0,0,width/2+brim+tolerance])
+    rotate([0,45,0])
+    cube([1.5,thickness+2,1.5], center=true);
+    
+    translate([0,thickness/2,0])
+    rotate([0,0,45])
+    cube([1.5,1.5,width+2*brim+2], center=true);
+    
+    
+    translate([0,-thickness/2,0])
+    rotate([0,0,45])
+    cube([1.5,1.5,width+2*brim+2], center=true);
 }
 
 module placed_part(id, count) {
@@ -128,7 +156,21 @@ module placed_part(id, count) {
     middle = begin + 180/count;
     end = begin + 360/count;
     
-    body(begin,end);
+    off_pins(id, begin, 1.4);
+    on_pins((id+1)%count, end, 1.4);
+    
+    difference() {
+        body(begin,end);
+        
+        multmatrix(matrix(begin))
+        bevel_cut();        
+
+        multmatrix(matrix(end))
+        bevel_cut();    
+        
+        on_pins(id, begin, 1.6);
+        off_pins((id+1)%count, end, 1.6);
+    }
 }
 
 module part(id, count, stick_to) {
@@ -138,7 +180,7 @@ module part(id, count, stick_to) {
     
     stick_point = middle + stick_to * 180/count;
     
-    rotate([90,0,0])
+    rotate([0,0,0])
     multmatrix(inverse_matrix(stick_point))
     translate(-f(stick_point))
     placed_part(id,count);
@@ -148,22 +190,30 @@ module body(begin, end) {
     color("DimGray"){
         difference() {
             extrude(begin,end)     
-            cube(size = [segment_width,thickness+brim*2,width+4], center=true);
-                    
-            extrude(begin-step,end+step)     
-            translate([0,(thickness+brim*2+2)/2,0])
-            cube(size = [segment_width,brim*2+2,width], center=true);
+            cube(size = [segment_width,thickness,width+2*tolerance+2*brim], center=true);
+            
             
             extrude(begin-step,end+step)     
-            translate([0,-(thickness+brim*2+2)/2,0])
-            cube(size = [segment_width,brim*2+2,width], center=true);
+            translate([0,thickness/2,0])
+            cube(size = [segment_width,2*(brim+tolerance),width+2*tolerance], center=true);
             
+            extrude(begin-step,end+step)     
+            translate([0,thickness/2,0])
+            cube(size = [segment_width,2*(strip_height+brim+tolerance),strip_width+2*tolerance], center=true);
+            
+            extrude(begin-step,end+step)     
+            translate([0,-thickness/2,0])
+            cube(size = [segment_width,2*(brim+tolerance),width+2*tolerance], center=true);
+            
+            extrude(begin-step,end+step)     
+            translate([0,-(thickness-2*brim)/2,0])
+            cube(size = [segment_width,2*(strip_height+tolerance),strip_width+2*tolerance], center=true);
+           
             multmatrix(matrix(270)) 
             difference() {
                 cube([14,10,10], center=true);
                 cylinder(h=12,r=3.5, center= true);
             }
-            hanger_cover();
         }
     }
     
