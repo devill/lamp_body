@@ -2,15 +2,19 @@ $fs = 0.1;
 
 step = 1;
 width = 15;
-tolerance = 0.2;
-thickness = 15;
+tolerance = 0.3;
+thickness = 19;
 strip_width = 10;
 strip_height = 2.5;
-brim = 2;
+brim_height = 4;
+brim_width = 2;
+bevel = 0.5;
 segment_width = 0.1;
 strip_length = 2500;
+key_pin_shift=1;
+diffuser_holder=0.2;
 
-mid_thickness = thickness - 2*(brim+strip_height);
+mid_thickness = thickness - 2*(brim_height+strip_height);
 
 echo("Mid thickness: ", mid_thickness);
 
@@ -103,52 +107,76 @@ function exp(i, n) = n > 0 ? exp(i, n-1)*i : 1;
 //part(1,60,0);
 //placed_part(6,60,8);
 //placed_part(7,60,8);
+/*
+for(i = [1:6]) {
+    translate([0,i*100,0])
+    part(i,6,0);
+}*/
 
 
-for(i = [0:1]) {
+for(i = [1:2]) {
     translate([0,i*width*3,0])
     part(i,60,0);
 }
 
+module pin(i, size, orientation) {
+    translate([orientation*(size/2-0.1),0,(i-2)*3.3])
+    rotate([0,orientation*90,0])
+    cylinder(h=size, r1=size, r2=0, center=true);
+}
+
+function bit_set(i, b) =
+    i % exp(2,b) - i % exp(2, b - 1) > 0;
+
+function checksum(i) = 
+    (bit_set(i,1) ? 1 : 0) + (bit_set(i,2) ? 1 : 0) + (bit_set(i,3) ? 1 : 0);
+
 //part(5,6,0);
-module on_pins(id,position,size) {
-    for(i = [0:4]) {
-        if(i == 0 || id % exp(2,i) - id % exp(2,i-1) > 0) {
-            multmatrix(matrix(position))
-            translate([size/2-0.1,0,(i-2)*3.3])
-            rotate([0,90,0])
-            cylinder(h=size, r1=size, r2=0, center=true);
+module on_pins(id,size) {
+    translate([0,key_pin_shift,0])
+    pin(0, size, 1);
+    translate([0,-key_pin_shift,0])
+    pin(0, size, 1);
+    
+    for(i = [1:3]) {
+        if(bit_set(id,i)) {
+            pin(i, size, 1);
         }
     }
+    
+    if(checksum(id) % 2 == 1) {
+        pin(4, size, 1);
+    }
 }
-module off_pins(id,position,size) {
-    for(i = [0:4]) {
-        if(!(i == 0 || id % exp(2,i) - id % exp(2,i-1) > 0)) {
-            multmatrix(matrix(position))
-            translate([-size/2+0.1,0,(i-2)*3.3])
-            rotate([0,-90,0])
-            cylinder(h=size, r1=size, r2=0, center=true);
-        }
+module off_pins(id,size) {
+    for(i = [1:3]) {
+        if(!bit_set(id,i)) {
+            pin(i, size, -1);
+            
+        } 
+    }
+    if(checksum(id) % 2 == 0) {
+        pin(4, size, -1);
     }
 }
 
 module bevel_cut() {
-    translate([0,0,-width/2-brim-tolerance])
+    translate([0,0,-width/2-brim_width-tolerance])
     rotate([0,45,0])
-    cube([1.5,thickness+2,1.5], center=true);
+    cube([1.5*bevel,thickness+2,1.5*bevel], center=true);
     
-    translate([0,0,width/2+brim+tolerance])
+    translate([0,0,width/2+brim_width+tolerance])
     rotate([0,45,0])
-    cube([1.5,thickness+2,1.5], center=true);
+    cube([1.5*bevel,thickness+2,1.5*bevel], center=true);
     
     translate([0,thickness/2,0])
     rotate([0,0,45])
-    cube([1.5,1.5,width+2*brim+2], center=true);
+    cube([1.5*bevel,1.5*bevel,width+2*(brim_width+bevel)+2], center=true);
     
     
     translate([0,-thickness/2,0])
     rotate([0,0,45])
-    cube([1.5,1.5,width+2*brim+2], center=true);
+    cube([1.5*bevel,1.5*bevel,width+2*(brim_width+bevel)+2], center=true);
 }
 
 module placed_part(id, count) {
@@ -156,20 +184,26 @@ module placed_part(id, count) {
     middle = begin + 180/count;
     end = begin + 360/count;
     
-    off_pins(id, begin, 1.4);
-    on_pins((id+1)%count, end, 1.4);
+    next_id = id%count + 1;
+    
+    
+    multmatrix(matrix(begin))
+    off_pins(id, 1.5);
+    multmatrix(matrix(end))
+    on_pins(next_id, 1.5);
     
     difference() {
         body(begin,end);
         
-        multmatrix(matrix(begin))
-        bevel_cut();        
+        multmatrix(matrix(begin)) {
+            on_pins(id, 1.6);
+            bevel_cut();        
+        }
 
-        multmatrix(matrix(end))
-        bevel_cut();    
-        
-        on_pins(id, begin, 1.6);
-        off_pins((id+1)%count, end, 1.6);
+        multmatrix(matrix(end)) {
+            bevel_cut();    
+            off_pins(next_id, 1.6);
+        }
     }
 }
 
@@ -190,29 +224,39 @@ module body(begin, end) {
     color("DimGray"){
         difference() {
             extrude(begin,end)     
-            cube(size = [segment_width,thickness,width+2*tolerance+2*brim], center=true);
+            cube(size = [segment_width,thickness,width+2*tolerance+2*brim_width], center=true);
             
             
             extrude(begin-step,end+step)     
             translate([0,thickness/2,0])
-            cube(size = [segment_width,2*(brim+tolerance),width+2*tolerance], center=true);
+            cube(size = [segment_width,2*(brim_height+tolerance),width+2*tolerance], center=true);
             
             extrude(begin-step,end+step)     
             translate([0,thickness/2,0])
-            cube(size = [segment_width,2*(strip_height+brim+tolerance),strip_width+2*tolerance], center=true);
+            cube(size = [segment_width,2*(strip_height+brim_height+tolerance),strip_width+2*tolerance], center=true);
             
             extrude(begin-step,end+step)     
             translate([0,-thickness/2,0])
-            cube(size = [segment_width,2*(brim+tolerance),width+2*tolerance], center=true);
+            cube(size = [segment_width,2*(brim_height+tolerance),width+2*tolerance], center=true);
             
             extrude(begin-step,end+step)     
-            translate([0,-(thickness-2*brim)/2,0])
+            translate([0,-(thickness-2*brim_height)/2,0])
             cube(size = [segment_width,2*(strip_height+tolerance),strip_width+2*tolerance], center=true);
-           
+            
             multmatrix(matrix(270)) 
             difference() {
                 cube([14,10,10], center=true);
                 cylinder(h=12,r=3.5, center= true);
+            }
+        }
+        for(i=[0:1]) {
+            for(j=[0:1]) {
+                extrude(begin,end)
+                mirror([0,j,0])
+                mirror([0,0,i])
+                translate([0,-thickness/2+diffuser_holder,width/2+tolerance])
+                rotate([0,90,0])
+                cylinder(diffuser_holder,diffuser_holder,segment_width,$fn=3);
             }
         }
     }
@@ -245,9 +289,9 @@ module arc(r,h,fn) {
     }
 }
 
-function twist(a) = 0;
+//function twist(a) = 0;
 //function twist(a) = (1-cos(90*-min(1,max(0,(a-60)/60))))*180;
-//function twist(a) = -min(1,max(0,(a-75)/30))*180;
+function twist(a) = -min(1,max(0,(a-75)/30))*180;
 
 module extrude(begin,end) {
     union() {
