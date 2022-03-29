@@ -9,10 +9,10 @@ strip_height = 2.5;
 brim_height = 4;
 brim_width = 2;
 bevel = 0.5;
-segment_width = 0.1;
+segment_width = 0.01;
 strip_length = 2500;
 key_pin_shift=1;
-diffuser_holder=0.2;
+diffuser_holder=0.4;
 
 mid_thickness = thickness - 2*(brim_height+strip_height);
 
@@ -113,11 +113,12 @@ for(i = [1:6]) {
     part(i,6,0);
 }*/
 
-
-for(i = [1:2]) {
+part(1,60,1);
+/*
+for(i = [1:6]) {
     translate([0,i*width*3,0])
-    part(i,60,0);
-}
+    part(i,6,0);
+}*/
 
 module pin(i, size, orientation) {
     translate([orientation*(size/2-0.1),0,(i-2)*3.3])
@@ -164,7 +165,7 @@ module bevel_cut() {
     translate([0,0,-width/2-brim_width-tolerance])
     rotate([0,45,0])
     cube([1.5*bevel,thickness+2,1.5*bevel], center=true);
-    
+    /*
     translate([0,0,width/2+brim_width+tolerance])
     rotate([0,45,0])
     cube([1.5*bevel,thickness+2,1.5*bevel], center=true);
@@ -177,6 +178,7 @@ module bevel_cut() {
     translate([0,-thickness/2,0])
     rotate([0,0,45])
     cube([1.5*bevel,1.5*bevel,width+2*(brim_width+bevel)+2], center=true);
+    */
 }
 
 module placed_part(id, count) {
@@ -256,7 +258,7 @@ module body(begin, end) {
                 mirror([0,0,i])
                 translate([0,-thickness/2+diffuser_holder,width/2+tolerance])
                 rotate([0,90,0])
-                cylinder(diffuser_holder,diffuser_holder,segment_width,$fn=3);
+                cylinder(segment_width,diffuser_holder,diffuser_holder,center=true);
             }
         }
     }
@@ -288,6 +290,7 @@ module arc(r,h,fn) {
         }
     }
 }
+
 
 //function twist(a) = 0;
 //function twist(a) = (1-cos(90*-min(1,max(0,(a-60)/60))))*180;
