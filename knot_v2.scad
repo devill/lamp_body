@@ -113,7 +113,7 @@ for(i = [1:6]) {
     part(i,6,0);
 }*/
 
-part(1,60,1);
+part(1,6,0);
 /*
 for(i = [1:6]) {
     translate([0,i*width*3,0])
@@ -165,7 +165,7 @@ module bevel_cut() {
     translate([0,0,-width/2-brim_width-tolerance])
     rotate([0,45,0])
     cube([1.5*bevel,thickness+2,1.5*bevel], center=true);
-    /*
+    
     translate([0,0,width/2+brim_width+tolerance])
     rotate([0,45,0])
     cube([1.5*bevel,thickness+2,1.5*bevel], center=true);
@@ -178,7 +178,7 @@ module bevel_cut() {
     translate([0,-thickness/2,0])
     rotate([0,0,45])
     cube([1.5*bevel,1.5*bevel,width+2*(brim_width+bevel)+2], center=true);
-    */
+    
 }
 
 module placed_part(id, count) {
@@ -190,21 +190,27 @@ module placed_part(id, count) {
     
     
     multmatrix(matrix(begin))
+    rotate([twist(begin),0,0])
     off_pins(id, 1.5);
     multmatrix(matrix(end))
+    rotate([twist(end),0,0])
     on_pins(next_id, 1.5);
     
     difference() {
         body(begin,end);
         
         multmatrix(matrix(begin)) {
-            on_pins(id, 1.6);
-            bevel_cut();        
+            rotate([twist(begin),0,0]) {
+                on_pins(id, 1.6);
+                bevel_cut();        
+            }
         }
 
         multmatrix(matrix(end)) {
-            bevel_cut();    
-            off_pins(next_id, 1.6);
+            rotate([twist(end),0,0]) {
+                bevel_cut();    
+                off_pins(next_id, 1.6);
+            }
         }
     }
 }
@@ -294,7 +300,10 @@ module arc(r,h,fn) {
 
 //function twist(a) = 0;
 //function twist(a) = (1-cos(90*-min(1,max(0,(a-60)/60))))*180;
-function twist(a) = -min(1,max(0,(a-75)/30))*180;
+function twist_phase(a, start, end) = 1-min(1,max(0,(a-start)/(end-start)));
+function spline(x) = 3*pow(x,2) - 2*pow(x,3);
+
+function twist(a) = spline(twist_phase(a, 75, 105))*180;
 
 module extrude(begin,end) {
     union() {
@@ -311,8 +320,6 @@ module extrude(begin,end) {
         }
     }
 }
-
-
 
 
 
