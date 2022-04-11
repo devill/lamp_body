@@ -114,11 +114,13 @@ for(i = [1:6]) {
 }*/
 
 part(1,6,0);
+
 /*
 for(i = [1:6]) {
     translate([0,i*width*3,0])
     part(i,6,0);
-}*/
+}
+*/
 
 module pin(i, size, orientation) {
     translate([orientation*(size/2-0.1),0,(i-2)*3.3])
@@ -190,27 +192,20 @@ module placed_part(id, count) {
     
     
     multmatrix(matrix(begin))
-    rotate([twist(begin),0,0])
     off_pins(id, 1.5);
     multmatrix(matrix(end))
-    rotate([twist(end),0,0])
     on_pins(next_id, 1.5);
     
     difference() {
         body(begin,end);
-        
         multmatrix(matrix(begin)) {
-            rotate([twist(begin),0,0]) {
                 on_pins(id, 1.6);
                 bevel_cut();        
-            }
         }
 
         multmatrix(matrix(end)) {
-            rotate([twist(end),0,0]) {
-                bevel_cut();    
-                off_pins(next_id, 1.6);
-            }
+            bevel_cut();    
+            off_pins(next_id, 1.6);
         }
     }
 }
